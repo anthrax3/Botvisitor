@@ -12,9 +12,14 @@ define("CURL_TIMEOUT", 60);
 if(@$argv[1]=="--help" || @$argv[1]=="-h" || @$argv[1]=="help" || !@$argv[1]){
 	die("\n    Usage: ".$argv[0]." LTC_adress [-p]\n\n");
 }
-
+//Wallet
 define("WALLET", $argv[1]);
 
+//Create temp folder
+if (!file_exists('tmp')) {
+    mkdir('tmp', 0777, true);
+}
+//GO!
 goNext();
 
 /**
@@ -37,6 +42,7 @@ function goNext($res=""){
 	if(strstr($res, "Abuse")){
 		echo colorize("IP banned.", "warning");
 		$proxy = getProxy();
+		goNext();
 	//Invalid Wallet Adress?
 	}elseif(strstr($res, "Invalid Address")){
 		die(colorize("Invalid adress.", "failure"));
@@ -44,12 +50,14 @@ function goNext($res=""){
 	}elseif(strstr($res, "Invalid Visit")){
 		echo colorize("Invalid Visit. Please try again in 24 hours.", "failure");
 		$proxy = getProxy();
+		goNext();
 	//Something not ok...
 	}elseif(!strstr($res, "for visiting the next site")){
 		file_put_contents("tmp/log.txt", curl($res));
 		echo colorize("Something is not ok...", "failure");
 		echo colorize("Result logged in tmp/log.txt", "debug");
 		$proxy = getProxy();
+		goNext();
 	//All ok
 	}else{
 		//BTC's
