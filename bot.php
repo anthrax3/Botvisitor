@@ -41,7 +41,7 @@ function goNext($res=""){
 	//Banned IP?
 	if(strstr($res, "Abuse")){
 		echo colorize("IP banned.", "warning");
-		$proxy = getProxy();
+		//$proxy = getProxy();
 		goNext();
 	//Invalid Wallet Adress?
 	}elseif(strstr($res, "Invalid Address")){
@@ -49,14 +49,17 @@ function goNext($res=""){
 	//Invalid Visit?
 	}elseif(strstr($res, "Invalid Visit")){
 		echo colorize("Invalid Visit. Please try again in 24 hours.", "failure");
-		$proxy = getProxy();
+		//$proxy = getProxy();
 		goNext();
-	//Something not ok...
+	//No more ads
+	}elseif(strstr($res, "No more ads")){
+		die(colorize("No more ads.", "failure"));
+	//Anything else...
 	}elseif(!strstr($res, "for visiting the next site")){
-		file_put_contents("tmp/log.txt", curl($res));
+		file_put_contents("tmp/log.txt", $res);
 		echo colorize("Something is not ok...", "failure");
 		echo colorize("Result logged in tmp/log.txt", "debug");
-		$proxy = getProxy();
+		//$proxy = getProxy();
 		goNext();
 	//All ok
 	}else{
@@ -75,9 +78,11 @@ function goNext($res=""){
 			$solvedCaptcha = deathbycaptchaResolver($img);
 		//Text captcha?
 		}else{
-			echo colorize("Text captcha", "debug");
-			echo $res;
-			exit;
+			$math = get_between($res, "<strong>", " =</strong><br />");
+			//Kinda scary...
+			eval("\$solvedCaptcha=".$math.";");
+			echo colorize("Text captcha: ".$math."=".$solvedCaptcha, "debug");
+			file_put_contents("tmp/logTEXTCAPTCHA.txt", $res);
 		}
 		//Got solved captcha?
 		if($solvedCaptcha){
@@ -103,7 +108,7 @@ function goVisit($solvedCaptcha){
 	$minutes = (int)get_between($cuted, "mins = ", " * m");
 	$seconds = (int)get_between($cuted, "secs = ", " + s");
 	echo colorize("Waiting ".$minutes." minutes and ".$seconds." seconds...", "debug");
-	sleep(($minutes*60)+$seconds);
+	sleep(($minutes*60)+$seconds+5);
 	//Grabbing the inputs
 	$a = get_between($res, 'name="a" value="', '"');
 	$t = get_between($res, 'name="t" value="', '"');
@@ -165,6 +170,7 @@ function curl($url, $post=""){
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_POST , true);
 	curl_setopt($ch, CURLOPT_POSTFIELDS , $post);
+	print_r($post);
 	curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, CURL_TIMEOUT);
 	curl_setopt($ch, CURLOPT_TIMEOUT, CURL_TIMEOUT);
 	curl_setopt($ch, CURLOPT_COOKIEJAR, "tmp/cookies.txt");
@@ -288,10 +294,12 @@ function getProxy(){
 	        }
 	    }
 	}
-	$r = rand(0, count($list));
-	$proxy = $list[$r]['ip'].":".$list[$r]['port'];
-	echo colorize("Proxy: ".$proxy, "debug");
-	return $proxy;
+	if(count($list)){
+		$r = rand(0, count($list));
+		$proxy = $list[$r]['ip'].":".$list[$r]['port'];
+		echo colorize("Proxy: ".$proxy, "debug");
+		return $proxy;
+	}
 }
 
 function strstr_array($haystack, $needle){
