@@ -2,8 +2,8 @@
 
 require_once('libs/deathbycaptcha/deathbycaptcha.php');
 
-define("DBC_USERNAME", "");
-define("DBC_PASSWORD", "");
+define("DBC_USERNAME", "evildarkangel");
+define("DBC_PASSWORD", "123123");
 define("DBC_TIMEOUT", 60);
 define("URL", "http://www.bitvisitor.com/");
 define("CURL_TIMEOUT", 60);
@@ -120,7 +120,7 @@ function goVisit($solvedCaptcha){
 		echo colorize("Incorrect captcha...", "failure");
 		goNext();
 	}else{
-		echo colorize("Sending the form... GIMME MA LILCOINZ!", "debug");
+		echo colorize("Sending the form... GIMME MA COINZ!", "debug");
 		$post = array(
 			"a" => $a,
 			"t" => $t,
