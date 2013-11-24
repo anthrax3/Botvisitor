@@ -8,10 +8,15 @@ define("DBC_TIMEOUT", 60);
 define("URL", "http://www.bitvisitor.com/");
 define("CURL_TIMEOUT", 60);
 
+if(!DBC_USERNAME){
+	die(colorize("You need to edit ".$argv[0]." to enter your Deathbycaptcha credentials", "failure"));
+}
+
 //Help
 if(@$argv[1]=="--help" || @$argv[1]=="-h" || @$argv[1]=="help" || !@$argv[1]){
 	die("\n    Usage: ".$argv[0]." LTC_adress [-p]\n\n");
 }
+
 //Wallet
 define("WALLET", $argv[1]);
 
@@ -40,26 +45,25 @@ function goNext($res=""){
 	}
 	//Banned IP?
 	if(strstr($res, "Abuse")){
-		echo colorize("IP banned.", "warning");
-		//$proxy = getProxy();
-		goNext();
+		die(colorize("IP banned.", "warning"));
 	//Invalid Wallet Adress?
 	}elseif(strstr($res, "Invalid Address")){
 		die(colorize("Invalid adress.", "failure"));
 	//Invalid Visit?
 	}elseif(strstr($res, "Invalid Visit")){
 		echo colorize("Invalid Visit. Please try again in 24 hours.", "failure");
-		//$proxy = getProxy();
 		goNext();
 	//No more ads
 	}elseif(strstr($res, "No more ads")){
 		die(colorize("No more ads.", "failure"));
+	//Invalid Captcha
+	}elseif(strstr($res, "Incorrect security code")){
+		goNext();
 	//Anything else...
 	}elseif(!strstr($res, "for visiting the next site")){
 		file_put_contents("tmp/log.txt", $res);
 		echo colorize("Something is not ok...", "failure");
 		echo colorize("Result logged in tmp/log.txt", "debug");
-		//$proxy = getProxy();
 		goNext();
 	//All ok
 	}else{
@@ -82,7 +86,6 @@ function goNext($res=""){
 			//Kinda scary...
 			eval("\$solvedCaptcha=".$math.";");
 			echo colorize("Text captcha: ".$math."=".$solvedCaptcha, "debug");
-			file_put_contents("tmp/logTEXTCAPTCHA.txt", $res);
 		}
 		//Got solved captcha?
 		if($solvedCaptcha){
@@ -108,22 +111,27 @@ function goVisit($solvedCaptcha){
 	$minutes = (int)get_between($cuted, "mins = ", " * m");
 	$seconds = (int)get_between($cuted, "secs = ", " + s");
 	echo colorize("Waiting ".$minutes." minutes and ".$seconds." seconds...", "debug");
-	sleep(($minutes*60)+$seconds+5);
+	//sleep(($minutes*60)+$seconds+5);
 	//Grabbing the inputs
 	$a = get_between($res, 'name="a" value="', '"');
 	$t = get_between($res, 'name="t" value="', '"');
 	$s = get_between($res, 'name="s" value="', '"');
-	echo colorize("Sending the form... GIMME MA LILCOINZ!", "debug");
-	echo colorize("Grabbing the next valitadion form...", "title");
-	$post = array(
-		"a" => $a,
-		"t" => $t,
-		"s" => $s,
-		"addr" => WALLET
-	);
-	$res = curl(URL."next.php", $post);
-	//repeating!
-	goNext($res);
+	if(strstr($res, "Incorrect security code entered.")){
+		echo colorize("Incorrect captcha...", "failure");
+		goNext();
+	}else{
+		echo colorize("Sending the form... GIMME MA LILCOINZ!", "debug");
+		$post = array(
+			"a" => $a,
+			"t" => $t,
+			"s" => $s,
+			"addr" => WALLET
+		);
+		$res = curl(URL."next.php", $post);
+		//repeating!
+		echo colorize("Grabbing the next valitadion form...", "title");
+		goNext($res);
+	}
 }
 
 /**
@@ -142,23 +150,13 @@ function deathbycaptchaResolver($img){
 /**
  Helpers
 */
-function get_between_help($end,$r){
-   $r = explode($end,$r);
-   return $r[0];   
-}
-function get_between($content,$start,$end){
-   $r = explode($start, $content);
-   if (isset($r[1])){
-       array_shift($r);
-       $end = array_fill(0,count($r),$end);
-       $r = array_map('get_between_help',$end,$r);
-       if(count($r)>1)
-           return $r;
-       else
-           return $r[0];
-   } else {
-       return array();
-   }
+function get_between($string,$start,$end){
+	$string = " ".$string;
+	$ini = strpos(strtoupper($string), strtoupper($start));
+	if($ini==0) return "";
+	$ini += strlen($start);
+	$len = strpos(strtoupper($string), strtoupper($end), $ini) - $ini;
+	return substr($string, $ini, $len);
 }
 
 function curl($url, $post=""){
