@@ -111,7 +111,7 @@ function goVisit($solvedCaptcha){
 	$minutes = (int)get_between($cuted, "mins = ", " * m");
 	$seconds = (int)get_between($cuted, "secs = ", " + s");
 	echo colorize("Waiting ".$minutes." minutes and ".$seconds." seconds...", "debug");
-	//sleep(($minutes*60)+$seconds+5);
+	sleep(($minutes*60)+$seconds+5);
 	//Grabbing the inputs
 	$a = get_between($res, 'name="a" value="', '"');
 	$t = get_between($res, 'name="t" value="', '"');
@@ -162,8 +162,8 @@ function get_between($string,$start,$end){
 function curl($url, $post=""){
 	global $proxy;
 	$ch = curl_init($url);
-	curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; Trident/4.0; .NET CLR 2.0.50727; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
-	curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+	curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:23.0) Gecko/20100101 Firefox/23.0");
+	curl_setopt($ch, CURLOPT_REFERER, URL."next.php");
 	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_POST , true);
