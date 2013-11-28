@@ -20,6 +20,10 @@ if(@$argv[1]=="--help" || @$argv[1]=="-h" || @$argv[1]=="help" || !@$argv[1]){
 //Wallet
 define("WALLET", $argv[1]);
 
+//Earnings
+$earnings['total'] = 0;
+$earnings['current'] = 0;
+
 //Create temp folder
 if (!file_exists('tmp')) {
     mkdir('tmp', 0777, true);
@@ -31,7 +35,7 @@ goNext();
  Next
 */
 function goNext($res=""){
-	global $proxy;
+	global $proxy, $earnings;
 	if(!$res){
 		echo colorize("Grabbing the valitadion form...", "title");
 		if(isset($argv[2])){
@@ -69,7 +73,12 @@ function goNext($res=""){
 	}else{
 		//BTC's
 		$btcs = get_between($res, "<small> Earn </small>", "<small>");
+		if($earnings['current']){
+			$earnings['total'] += $earnings['current'];
+			echo colorize("Current earnings must be: ".$earnings['total'], "success");
+		}
 		echo colorize("Next earnings: ".$btcs, "debug");
+		$earnings['current'] = $btcs;
 		//Graphic captcha?
 		if(strstr($res, "/securimage_show.php")){
 			echo colorize("Image captcha", "debug");
@@ -99,7 +108,7 @@ function goNext($res=""){
  Visit
 */
 function goVisit($solvedCaptcha){
-	global $proxy;
+	global $proxy, $earnings;
 	echo colorize("Visiting the ad...", "title");
 	$post = array(
 		"ct_captcha" => $solvedCaptcha,
@@ -190,8 +199,8 @@ function colorize($text, $status) {
    			$out = "[0;32m"; //Green
   		break;
   		case "title":
-  			$text = "\n[+] ".$text;
-   			$out = "[0;32m"; //Green
+  			$text = "[+] ".$text;
+   			$out = "[0;32m\n"; //Green
   		break;
   		case "debug":
   			$text = " * ".$text;
@@ -217,10 +226,11 @@ function colorize($text, $status) {
    		break;
    	}
 	if($text){
+		$date = "[".date("H:i:s")."] ";
 		if($out)
-	 		return chr(27).$out.$text.chr(27)."[0m \n";
+	 		return chr(27).$out.$date.$text.chr(27)."[0m \n";
 	 	else
-	 		return $text."\n";
+	 		return $date.$text."\n";
 	 }
 }
 
